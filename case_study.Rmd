@@ -1,0 +1,188 @@
+---
+title: "Dickens case study"
+author: "Andrea Nini"
+date: "2025-07-14"
+output:
+  html_document:
+    toc: true            
+    toc_float: true      
+    number_sections: true
+    df_print: paged     
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This tutorial is a companion to the talk:
+
+> Nini, A. ‘Examining an author’s individual grammar’. *Comparative Literature Goes Digital Workshop*, *Digital Humanities 2025*. Universidade Nova de Lisboa, Lisbon, Portugal. 14/07/2025.
+
+The tutorial explains how to replicate the analysis that was presented as part of this talk. A more general tutorial on how to use `idiolect` can be found on its website [here](https://andreanini.github.io/idiolect/index.html).
+
+# Installation and loading
+
+You can install `idiolect` from CRAN as any other package.
+
+```{r eval=FALSE, include=TRUE}
+install.packages("idiolect")
+```
+
+`idiolect` depends on `quanteda`, which is also loaded at the same time.
+
+```{r}
+library(idiolect)
+```
+
+# Corpus preparation
+
+This case study uses the English component of the *refcor* corpus, which is available [here](https://github.com/cophi-wue/refcor). To replicate this analysis in full, you should download just the folder of English texts. Then, to load this folder of texts as a corpus you can use the `create_corpus()` function.
+
+```{r eval=FALSE, include=TRUE}
+full.corpus <- create_corpus("path/to/folder")
+```
+
+Our case study is the analysis of a random 1,000 tokens from Dicken's novel *Bleak House*. This is our $Q$ sample. 
+
+```{r eval=FALSE, include=TRUE}
+q.sample <- corpus_subset(                          
+  full.corpus,                                      
+  textname == "bleak"              #select just Bleak House
+) |> 
+  chunk_texts(size = 1000) |>      #break it in 1,000 token chunks
+  corpus_sample(size = 1)          #randomly select one
+
+docnames(q.sample) <- gsub(        #remove the number from the sample name
+  "\\.\\d+", 
+  "", 
+  docnames(q.sample)
+) 
+```
+
+The candidate author's data, the $K$ sample, is instead made up of two random 40,000 token samples from the other two Dickens novels.
+
+```{r eval=FALSE, include=TRUE}
+k.samples <- corpus_subset(
+  full.corpus,
+  textname != "bleak" & author == "dickens"   #select other novels by Dickens
+) |> 
+  chunk_texts(size = 40000) |>                #break them in 40,000 token chunks
+  corpus_sample(size = 1, by = textname)      #randomly select one chunk per novel
+
+docnames(k.samples) <- gsub(                  #remove the number from the sample names
+  "\\.\\d+", 
+  "", 
+  docnames(k.samples)
+) 
+```
+
+Finally, for the reference corpus, we are going to use two random 40,000 token samples from two random novels for each other author in the corpus except for Dickens.
+
+```{r eval=FALSE, include=TRUE}
+reference <- corpus_subset(
+  full.corpus,
+  author != "dickens"                      #select novels not by Dickens
+) |> 
+  corpus_sample(2, by = author) |>         #sample two texts per author
+  chunk_texts(size = 40000) |>             #break them in 40,000 token chunks
+  corpus_sample(size = 1, by = textname)   #randomly select one chunk per novel
+
+docnames(reference) <- gsub(               #remove the number from the sample names
+  "\\.\\d+", 
+  "", 
+  docnames(reference)
+) 
+```
+
+The three sets of samples have to be pre-processed with the *POSnoise* algorithm before applying *LambdaG*. To run this function you have to have `spacyr` installed, as well as the standard model for English. If you encounter any problems with the installation check the `spacyr` documentation [here](https://spacyr.quanteda.io/reference/spacyr-package.html).
+
+```{r eval=FALSE, include=TRUE}
+q.sample.pos <- contentmask(q.sample)
+k.samples.pos <- contentmask(k.samples)
+reference.pos <- contentmask(reference)
+```
+
+The samples also need to be tokenised into sentences.
+
+```{r eval=FALSE, include=TRUE}
+q.sents <- tokenize_sents(q.sample.pos)
+k.sents <- tokenize_sents(k.samples.pos)
+ref.sents <- tokenize_sents(reference.pos)
+```
+
+Because these steps could take a long time depending on your computer, some pre-processed samples are ready for you to use in this repository for the next steps. These can be loaded as follows.
+
+```{r}
+k.sents <- readRDS("data/posnoised_K_sample.rds")
+q.sents <- readRDS("data/posnoised_Q_sample.rds")
+ref.sents <- readRDS("data/posnoised_ref_samples.rds")
+```
+
+A fully pre-processed sample (*POSnoised* and tokenised) looks like this:
+
+```{r}
+q.sents
+```
+
+There are some mistakes in the sentence tokenisation and these could be fixed by using a different model or by adding some additional pre-processing steps. However, for the sake of this demonstration we are going to use the samples as they are.
+
+# *LambdaG* authorship verification analysis
+
+Let's run an authorship verification analysis with *LambdaG*.
+
+```{r}
+lambdaG(q.data = q.sents, k.data = k.sents, ref.data = ref.sents)
+```
+
+The output is a single $\lambda_G$ score. The score is positive, which indicates that the support is for a same author hypothesis. However, we cannot quantify the strength of this support because to do so we would need a calibration dataset to turn this raw score into a calibrated log-likelihood ratio.
+
+# Analysing the language of the author
+
+*LambdaG* can also be used to create a text heatmap to show which patterns contribute to the evidence of same authorship or which patterns are the most idiosyncratic to the candidate author, in this case Dickens. To do so, instead of the `lambdaG()` function we need to use `lambdaG_visualize()`.
+
+```{r eval=FALSE, include=TRUE}
+rlv <- lambdaG_visualize(
+  q.data = q.sents,
+  k.data = k.sents, 
+  ref.data = ref.sents,
+  print = "heatmap.html",   #this argument should contain the path to the heatmap output
+  cores = NULL              #you can specify how many cores to use for parallel processing 
+  )
+```
+
+This function will produce a heatmap similar to the one presented during the talk. The heatmap might look slightly differently because *LambdaG* is a stochastic algorithm.
+
+# Exploring the patterns in the text using a concordance
+
+With a heatmap the analyst can now identify those constructions that can be explored using a concordance. In the new upcoming version of `idiolect` it will be possible to produce a concordance starting from the same sentence-tokenised objects used above. However, for the current version this is not possible so we need to 'untokenise' the samples by recombining all the sentences into full texts.
+
+```{r}
+recombine <- function(sentences){
+  
+  c <- lapply(sentences, paste0, collapse = " \n ") |> 
+    unlist() |> 
+    corpus()
+  
+  docvars(c) <- docvars(sentences)
+  
+  return(c)
+  
+}
+
+q.samples <- recombine(q.sents)
+k.samples <- recombine(k.sents)
+ref.samples <- recombine(ref.sents)
+```
+
+It is now possible to create concordances and explore the patterns in their context.
+
+```{r}
+concordance(
+  q.data = q.samples,
+  k.data = k.samples,
+  reference.data = ref.samples, 
+  search = "never to have"
+) |> 
+  dplyr::select(-from, -to)   #this simply removes some unnecessary columns
+```
+
