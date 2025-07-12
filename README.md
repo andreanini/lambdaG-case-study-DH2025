@@ -4,6 +4,8 @@ This repository contains the abstract, a tutorial and (soon) the slides for the 
 
 > Nini, A. ‘Examining an author’s individual grammar’. *Comparative Literature Goes Digital Workshop*, *Digital Humanities 2025*. Universidade Nova de Lisboa, Lisbon, Portugal. 14/07/2025.
 
+The tutorial can be found here: <https://andreanini.github.io/lambdaG-case-study-DH2025/case_study.html>.
+
 ## Abstract
 
 This demo talk will introduce the audience to a novel algorithm for stylometry called *LambdaG* (Nini et al. 2025). Although this method is designed as an authorship verification algorithm, this talk will demonstrate how it can also be used to study the unique grammar of an author.
