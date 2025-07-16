@@ -1,5 +1,7 @@
 # Examining an author’s individual grammar
 
+[![DOI](https://zenodo.org/badge/1018618561.svg)](https://doi.org/10.5281/zenodo.15971102)
+
 This repository contains the abstract, a tutorial and the slides for the talk:
 
 > Nini, A. ‘Examining an author’s individual grammar’. *Comparative Literature Goes Digital Workshop*, *Digital Humanities 2025*. Universidade Nova de Lisboa, Lisbon, Portugal. 14/07/2025.
