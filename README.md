@@ -1,6 +1,6 @@
 # Examining an author’s individual grammar
 
-This repository contains the abstract, a tutorial and (soon) the slides for the talk:
+This repository contains the abstract, a tutorial and the slides for the talk:
 
 > Nini, A. ‘Examining an author’s individual grammar’. *Comparative Literature Goes Digital Workshop*, *Digital Humanities 2025*. Universidade Nova de Lisboa, Lisbon, Portugal. 14/07/2025.
 
